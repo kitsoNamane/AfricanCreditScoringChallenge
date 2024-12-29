@@ -17,8 +17,7 @@ function readdataset(filepath::String)
     else
         0
     end) => :New_versus_Repeat)
-    y = select(df, :target => :target)
-    Matrix(select(df, Not(:target))), Matrix(y)
+    Matrix(select(df, Not(:target))), df.target
 end
 
 function linearscaling(x::Vector)
@@ -65,6 +64,25 @@ function compute_cost_logistic(w::Vector, b, x::Matrix, y::Vector)
     f_wb = custom_model(w, x, b)
     cost = -y .* log.(f_wb) .- (1 .- y) .* log.(1 .- f_wb)
     sum(cost) / size(x)[1]
+end
+
+function compute_gradient_logistic(w::Vector, b, x::Matrix, y::Vector)
+    m = size(x)[1]
+
+    f_wb = custom_model(w, x, b)
+    err = f_wb .- y
+    dj_dw = sum.(transpose(err) * x) ./ m
+    dj_dw[1, :], sum(err) / m
+end
+
+function gradient_descent(w::Vector, b, alpha, x::Matrix, y::Vector, num_iters::Int64)
+    for _ in 1:num_iters
+        dj_dw, dj_db = compute_gradient_logistic(w, b, x, y)
+        w = w .- alpha * dj_dw
+        b = b - alpha * dj_db
+    end
+
+    return w, b
 end
 
 end # module AfricanCreditScoringChallenge

@@ -6,8 +6,30 @@ using InteractiveUtils
 
 # ╔═╡ a85e30fe-c2a4-11ef-2a49-d31348ee8dc3
 begin
+	using CSV
 	using DataFrames
 	using Statistics
+end
+
+# ╔═╡ e2fbc706-b1cf-427a-b14c-52f74e9fd1d8
+function readdataset(filepath::String)
+	df = CSV.read(filepath, DataFrame)
+	df = select!(df, Not([:ID, :customer_id, :country_id, :tbl_loan_id, :lender_id, :disbursement_date, :due_date]))
+    df = transform!(df, :loan_type => ByRow(x -> parse(Int64, x[end])) => :loan_type)
+    df = transform!(df, :New_versus_Repeat => ByRow(y -> if (y == "Repeat Loan")
+        1
+    else
+        0
+    end) => :New_versus_Repeat)
+    Matrix(select(df, Not(:target))), df.target
+
+end
+
+# ╔═╡ 4dcdefe5-3075-46d1-ae9b-d40b1cfaed4d
+begin
+	x_train, y_train = readdataset("../data/Train.csv")
+	println(typeof(x_train))
+	println(typeof(y_train))
 end
 
 # ╔═╡ 63632d0c-4b58-41f1-b045-35073ab6eef9
@@ -24,9 +46,7 @@ end
 # ╔═╡ cec78d66-180e-425a-832a-cda62bf08311
 function compute_cost_logistic(w::Vector, b, x::Matrix, y::Vector)
 	f_wb = custom_model(w, x, b)
-	println(f_wb)
-	cost = log.(f_wb) .* -y .- log.(1 .- f_wb) .* (1 .- y)
-	println(cost)
+	cost = -y .* log.(f_wb) .- (1 .- y) .* log.(1 .- f_wb)
 	sum(cost) / size(x)[1]
 end
 
@@ -36,27 +56,67 @@ begin
 	y = DataFrame(y=[0,0,0,1,1,1]).y
 	w = [1,1]
 	b = -3
-	print(y)
 end
 
 # ╔═╡ e34340ac-25bb-44ce-ad7f-d113c7d1d6a1
 p = compute_cost_logistic(w, b, x, y)
 
 # ╔═╡ ab7bcd0b-6dd3-4856-85d4-4e0e3636adbf
-begin
+function compute_gradient_logistic(w::Vector, b, x::Matrix, y::Vector)
+	shape = size(x)
+	m = shape[1]
+	n = shape[2]
+	
 	f_wb = custom_model(w, x, b)
-	println(f_wb)
-	r = -y .* log1p.(f_wb) .- (1 .- y) .* log1p.(1 .- f_wb)
-	log.(f_wb)
+	err = f_wb .- y
+	dj_dw = sum.(transpose(err) * x) ./ m
+	dj_dw[1,:], sum(err) / m
 end
+
+# ╔═╡ c8410e68-8d32-41a8-a688-23278842f31a
+begin
+	w1 = [2.0,3.0]
+	b1 = 1.0
+	print(size(w1))
+end
+
+# ╔═╡ 06c79737-909d-44f0-aefd-16f569a73427
+begin
+	dj_dw, dj_db = compute_gradient_logistic(w1, b1, x, y)
+	println(typeof(dj_dw))
+end
+
+# ╔═╡ 6291d77c-69ab-4ae4-b661-32cb65858290
+function gradient_descent(w::Vector, b, alpha, x::Matrix, y::Vector, num_iters::Int64)
+	for i in 1:num_iters
+		
+		dj_dw, dj_db = compute_gradient_logistic(w, b, x, y)
+		w = w .- alpha * dj_dw
+		b = b - alpha * dj_db
+	end
+	return w, b
+end
+
+# ╔═╡ d57105b3-ee16-4fc5-bf69-106cc310b4b7
+begin
+	w2 = [0.0, 0.0]
+	b2 = 0.0
+	alpha = 0.1
+	iters = 10000
+end
+
+# ╔═╡ 8f0b972f-89c3-49c1-a41b-379f70abfefc
+gradient_descent(w2, b2, alpha, x, y, iters)
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
+CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 
 [compat]
+CSV = "~0.10.15"
 DataFrames = "~1.7.0"
 Statistics = "~1.11.1"
 """
@@ -67,7 +127,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.11.2"
 manifest_format = "2.0"
-project_hash = "dbdff12547611b96a9e331e4ef970d1e5ee5b5f7"
+project_hash = "5e6ab2f4091fceb1dba5d28687c1a2f5171a1201"
 
 [[deps.Artifacts]]
 uuid = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
@@ -76,6 +136,18 @@ version = "1.11.0"
 [[deps.Base64]]
 uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
 version = "1.11.0"
+
+[[deps.CSV]]
+deps = ["CodecZlib", "Dates", "FilePathsBase", "InlineStrings", "Mmap", "Parsers", "PooledArrays", "PrecompileTools", "SentinelArrays", "Tables", "Unicode", "WeakRefStrings", "WorkerUtilities"]
+git-tree-sha1 = "deddd8725e5e1cc49ee205a1964256043720a6c3"
+uuid = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
+version = "0.10.15"
+
+[[deps.CodecZlib]]
+deps = ["TranscodingStreams", "Zlib_jll"]
+git-tree-sha1 = "bce6804e5e6044c6daab27bb533d1295e4a2e759"
+uuid = "944b1d66-785c-5afd-91f1-9de20f533193"
+version = "0.7.6"
 
 [[deps.Compat]]
 deps = ["TOML", "UUIDs"]
@@ -123,6 +195,20 @@ version = "1.0.0"
 deps = ["Printf"]
 uuid = "ade2ca70-3891-5945-98fb-dc099432e06a"
 version = "1.11.0"
+
+[[deps.FilePathsBase]]
+deps = ["Compat", "Dates"]
+git-tree-sha1 = "7878ff7172a8e6beedd1dea14bd27c3c6340d361"
+uuid = "48062228-2e41-5def-b9a4-89aafe57970f"
+version = "0.9.22"
+
+    [deps.FilePathsBase.extensions]
+    FilePathsBaseMmapExt = "Mmap"
+    FilePathsBaseTestExt = "Test"
+
+    [deps.FilePathsBase.weakdeps]
+    Mmap = "a63ad114-7e13-5084-954f-fe012c677804"
+    Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [[deps.Future]]
 deps = ["Random"]
@@ -182,6 +268,10 @@ git-tree-sha1 = "ec4f7fbeab05d7747bdf98eb74d130a2a2ed298d"
 uuid = "e1d29d7a-bbdc-5cf2-9ac0-f12de2c33e28"
 version = "1.2.0"
 
+[[deps.Mmap]]
+uuid = "a63ad114-7e13-5084-954f-fe012c677804"
+version = "1.11.0"
+
 [[deps.OpenBLAS_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "Libdl"]
 uuid = "4536629a-c528-5b80-bd46-f80d51c5b363"
@@ -191,6 +281,12 @@ version = "0.3.27+1"
 git-tree-sha1 = "12f1439c4f986bb868acda6ea33ebc78e19b95ad"
 uuid = "bac558e1-5e72-5ebc-8fee-abe8a469f55d"
 version = "1.7.0"
+
+[[deps.Parsers]]
+deps = ["Dates", "PrecompileTools", "UUIDs"]
+git-tree-sha1 = "8489905bcdbcfac64d1daa51ca07c0d8f0283821"
+uuid = "69de0a69-1ddd-5017-9359-2bf0b02dc9f0"
+version = "2.8.1"
 
 [[deps.PooledArrays]]
 deps = ["DataAPI", "Future"]
@@ -282,6 +378,11 @@ git-tree-sha1 = "598cd7c1f68d1e205689b1c2fe65a9f85846f297"
 uuid = "bd369af6-aec1-5ad0-b16a-f7cc5008161c"
 version = "1.12.0"
 
+[[deps.TranscodingStreams]]
+git-tree-sha1 = "0c45878dcfdcfa8480052b6ab162cdd138781742"
+uuid = "3bb67fe8-82b1-5028-8e26-92a6c54297fa"
+version = "0.11.3"
+
 [[deps.UUIDs]]
 deps = ["Random", "SHA"]
 uuid = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
@@ -291,6 +392,22 @@ version = "1.11.0"
 uuid = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
 version = "1.11.0"
 
+[[deps.WeakRefStrings]]
+deps = ["DataAPI", "InlineStrings", "Parsers"]
+git-tree-sha1 = "b1be2855ed9ed8eac54e5caff2afcdb442d52c23"
+uuid = "ea10d353-3f73-51f8-a26c-33c1cb351aa5"
+version = "1.4.2"
+
+[[deps.WorkerUtilities]]
+git-tree-sha1 = "cd1659ba0d57b71a464a29e64dbc67cfe83d54e7"
+uuid = "76eceee3-57b5-4d4a-8e66-0e911cebbf60"
+version = "1.6.1"
+
+[[deps.Zlib_jll]]
+deps = ["Libdl"]
+uuid = "83775a58-1f1d-513f-b197-d71354ab007a"
+version = "1.2.13+1"
+
 [[deps.libblastrampoline_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "8e850b90-86db-534c-a0d3-1478176c7d93"
@@ -299,11 +416,18 @@ version = "5.11.0+0"
 
 # ╔═╡ Cell order:
 # ╠═a85e30fe-c2a4-11ef-2a49-d31348ee8dc3
+# ╠═e2fbc706-b1cf-427a-b14c-52f74e9fd1d8
+# ╠═4dcdefe5-3075-46d1-ae9b-d40b1cfaed4d
 # ╠═63632d0c-4b58-41f1-b045-35073ab6eef9
 # ╠═e6344349-e678-46cf-961f-f78cc84ef141
 # ╠═cec78d66-180e-425a-832a-cda62bf08311
 # ╠═a5411f7e-c29b-4db9-acfe-59ca6ff03ed8
 # ╠═e34340ac-25bb-44ce-ad7f-d113c7d1d6a1
 # ╠═ab7bcd0b-6dd3-4856-85d4-4e0e3636adbf
+# ╠═c8410e68-8d32-41a8-a688-23278842f31a
+# ╠═06c79737-909d-44f0-aefd-16f569a73427
+# ╠═6291d77c-69ab-4ae4-b661-32cb65858290
+# ╠═d57105b3-ee16-4fc5-bf69-106cc310b4b7
+# ╠═8f0b972f-89c3-49c1-a41b-379f70abfefc
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
