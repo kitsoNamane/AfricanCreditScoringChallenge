@@ -9,6 +9,7 @@ begin
 	using CSV
 	using DataFrames
 	using Statistics
+	using Random
 end
 
 # ╔═╡ e2fbc706-b1cf-427a-b14c-52f74e9fd1d8
@@ -25,11 +26,15 @@ function readdataset(filepath::String)
 
 end
 
+# ╔═╡ a232b1ba-d520-4b10-a629-dde6e74f5177
+function loadData(filepath::String)
+	df = CSV.read(filepath, DataFrame)
+	return Matrix(select(df, Not(:y))), df.y
+end
+
 # ╔═╡ 4dcdefe5-3075-46d1-ae9b-d40b1cfaed4d
 begin
-	x_train, y_train = readdataset("../data/Train.csv")
-	println(typeof(x_train))
-	println(typeof(y_train))
+	x_train, y_train = loadData("../data/ex2data1a.txt")
 end
 
 # ╔═╡ 63632d0c-4b58-41f1-b045-35073ab6eef9
@@ -73,19 +78,6 @@ function compute_gradient_logistic(w::Vector, b, x::Matrix, y::Vector)
 	dj_dw[1,:], sum(err) / m
 end
 
-# ╔═╡ c8410e68-8d32-41a8-a688-23278842f31a
-begin
-	w1 = [2.0,3.0]
-	b1 = 1.0
-	print(size(w1))
-end
-
-# ╔═╡ 06c79737-909d-44f0-aefd-16f569a73427
-begin
-	dj_dw, dj_db = compute_gradient_logistic(w1, b1, x, y)
-	println(typeof(dj_dw))
-end
-
 # ╔═╡ 6291d77c-69ab-4ae4-b661-32cb65858290
 function gradient_descent(w::Vector, b, alpha, x::Matrix, y::Vector, num_iters::Int64)
 	for i in 1:num_iters
@@ -99,20 +91,46 @@ end
 
 # ╔═╡ d57105b3-ee16-4fc5-bf69-106cc310b4b7
 begin
-	w2 = [0.0, 0.0]
-	b2 = 0.0
-	alpha = 0.1
+	w2 = [0.8, 1]
+	b2 = -8
+	alpha = 0.001
 	iters = 10000
 end
 
 # ╔═╡ 8f0b972f-89c3-49c1-a41b-379f70abfefc
-gradient_descent(w2, b2, alpha, x, y, iters)
+w3, b3 = gradient_descent(w2, b2, alpha, x_train, y_train, iters)
+
+# ╔═╡ 64affb6d-0822-4076-a979-747b6a9ea667
+function threshhold(x, th)
+	if x <= th
+		return 0
+	else
+		return 1
+	end
+end
+
+# ╔═╡ 8a1d0ffe-8068-4910-89be-1b7c0e477a61
+function predict(w::Vector, b, x::Matrix)
+	threshhold.(custom_model(w, x ,b), 0.5)
+end
+
+# ╔═╡ 9e732859-7ebe-40df-8111-e1ed26ec4a82
+begin
+	tmp_w = [1.62434536, -0.61175641]
+	tmp_b = 0.3
+	tmp_X = [[-1.02817175 -1.57296862]; [0.36540763 -2.8015387]; [1.24481176 -1.2612069]; [-0.1809609  -0.74937038]]
+	predict(tmp_w, tmp_b, tmp_X)
+end
+
+# ╔═╡ cbef61f3-2d41-4199-a951-ee6a182fe04b
+
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 
 [compat]
@@ -127,7 +145,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.11.2"
 manifest_format = "2.0"
-project_hash = "5e6ab2f4091fceb1dba5d28687c1a2f5171a1201"
+project_hash = "e6933381ea1a251dba064d7f0aa25897f5271a0f"
 
 [[deps.Artifacts]]
 uuid = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
@@ -417,6 +435,7 @@ version = "5.11.0+0"
 # ╔═╡ Cell order:
 # ╠═a85e30fe-c2a4-11ef-2a49-d31348ee8dc3
 # ╠═e2fbc706-b1cf-427a-b14c-52f74e9fd1d8
+# ╠═a232b1ba-d520-4b10-a629-dde6e74f5177
 # ╠═4dcdefe5-3075-46d1-ae9b-d40b1cfaed4d
 # ╠═63632d0c-4b58-41f1-b045-35073ab6eef9
 # ╠═e6344349-e678-46cf-961f-f78cc84ef141
@@ -424,10 +443,12 @@ version = "5.11.0+0"
 # ╠═a5411f7e-c29b-4db9-acfe-59ca6ff03ed8
 # ╠═e34340ac-25bb-44ce-ad7f-d113c7d1d6a1
 # ╠═ab7bcd0b-6dd3-4856-85d4-4e0e3636adbf
-# ╠═c8410e68-8d32-41a8-a688-23278842f31a
-# ╠═06c79737-909d-44f0-aefd-16f569a73427
 # ╠═6291d77c-69ab-4ae4-b661-32cb65858290
 # ╠═d57105b3-ee16-4fc5-bf69-106cc310b4b7
 # ╠═8f0b972f-89c3-49c1-a41b-379f70abfefc
+# ╠═64affb6d-0822-4076-a979-747b6a9ea667
+# ╠═8a1d0ffe-8068-4910-89be-1b7c0e477a61
+# ╠═9e732859-7ebe-40df-8111-e1ed26ec4a82
+# ╠═cbef61f3-2d41-4199-a951-ee6a182fe04b
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002

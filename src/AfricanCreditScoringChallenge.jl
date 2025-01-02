@@ -85,4 +85,16 @@ function gradient_descent(w::Vector, b, alpha, x::Matrix, y::Vector, num_iters::
     return w, b
 end
 
+function threshhold(x, th)
+    if x <= th
+        return 0
+    else
+        return 1
+    end
+end
+
+function predict(w::Vector, b, x::Matrix)
+    threshhold.(custom_model(w, x, b))
+end
+
 end # module AfricanCreditScoringChallenge
