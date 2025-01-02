@@ -54,7 +54,6 @@ function sigmoid(z)
     1 ./ (1 .+ exp.(-z))
 end
 
-
 function custom_model(w::Vector, x::Matrix, b)
     z = x * w .+ b
     sigmoid(z)
