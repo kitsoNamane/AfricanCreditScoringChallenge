@@ -80,13 +80,17 @@ end
 
 # ╔═╡ 6291d77c-69ab-4ae4-b661-32cb65858290
 function gradient_descent(w::Vector, b, alpha, x::Matrix, y::Vector, num_iters::Int64)
+	j_history = []
 	for i in 1:num_iters
 		
 		dj_dw, dj_db = compute_gradient_logistic(w, b, x, y)
 		w = w .- alpha * dj_dw
 		b = b - alpha * dj_db
+
+		cost = compute_cost_logistic(w, b, x, y)
+		append!(j_history, cost)
 	end
-	return w, b
+	return w, b, j_history
 end
 
 # ╔═╡ d57105b3-ee16-4fc5-bf69-106cc310b4b7
@@ -98,7 +102,7 @@ begin
 end
 
 # ╔═╡ 8f0b972f-89c3-49c1-a41b-379f70abfefc
-w3, b3 = gradient_descent(w2, b2, alpha, x_train, y_train, iters)
+w3, b3, j_history = gradient_descent(w2, b2, alpha, x_train, y_train, iters)
 
 # ╔═╡ 64affb6d-0822-4076-a979-747b6a9ea667
 function threshhold(x, th)
@@ -121,9 +125,6 @@ begin
 	tmp_X = [[-1.02817175 -1.57296862]; [0.36540763 -2.8015387]; [1.24481176 -1.2612069]; [-0.1809609  -0.74937038]]
 	predict(tmp_w, tmp_b, tmp_X)
 end
-
-# ╔═╡ cbef61f3-2d41-4199-a951-ee6a182fe04b
-
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -449,6 +450,5 @@ version = "5.11.0+0"
 # ╠═64affb6d-0822-4076-a979-747b6a9ea667
 # ╠═8a1d0ffe-8068-4910-89be-1b7c0e477a61
 # ╠═9e732859-7ebe-40df-8111-e1ed26ec4a82
-# ╠═cbef61f3-2d41-4199-a951-ee6a182fe04b
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002

@@ -75,13 +75,17 @@ function compute_gradient_logistic(w::Vector, b, x::Matrix, y::Vector)
 end
 
 function gradient_descent(w::Vector, b, alpha, x::Matrix, y::Vector, num_iters::Int64)
+    j_history = []
     for _ in 1:num_iters
         dj_dw, dj_db = compute_gradient_logistic(w, b, x, y)
         w = w .- alpha * dj_dw
         b = b - alpha * dj_db
+
+        cost = compute_cost_logistic(w, b, x, y)
+        append!(j_history, cost)
     end
 
-    return w, b
+    return w, b, j_history
 end
 
 function threshhold(x, th)
